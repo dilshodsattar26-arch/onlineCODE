@@ -1,0 +1,2007 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🚀 CodeVerse — Online IDE</title>
+
+<!-- CodeMirror -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/dracula.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/theme/monokai.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/hint/show-hint.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldgutter.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/scroll/simplescrollbars.min.css">
+
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#0d1117;--bg2:#161b22;--bg3:#21262d;--bg4:#30363d;
+  --text:#c9d1d9;--text2:#8b949e;--accent:#58a6ff;--green:#3fb950;
+  --red:#f85149;--orange:#d29922;--purple:#bc8cff;--pink:#f778ba;
+  --yellow:#e3b341;--border:#30363d;--radius:8px;
+}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow:hidden;height:100vh}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:var(--bg2)}
+::-webkit-scrollbar-thumb{background:var(--bg4);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--text2)}
+
+/* ===== AUTH SCREEN ===== */
+.auth-overlay{position:fixed;inset:0;background:var(--bg);z-index:9999;display:flex;align-items:center;justify-content:center}
+.auth-overlay.hidden{display:none}
+.auth-box{background:var(--bg2);border:1px solid var(--border);border-radius:16px;padding:40px;width:420px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.auth-logo{text-align:center;margin-bottom:30px}
+.auth-logo h1{font-size:32px;background:linear-gradient(135deg,var(--accent),var(--purple),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.auth-logo p{color:var(--text2);margin-top:6px;font-size:14px}
+.auth-tabs{display:flex;gap:0;margin-bottom:24px;background:var(--bg);border-radius:var(--radius);overflow:hidden;border:1px solid var(--border)}
+.auth-tab{flex:1;padding:10px;text-align:center;cursor:pointer;font-size:14px;font-weight:600;transition:.3s;color:var(--text2)}
+.auth-tab.active{background:var(--accent);color:#fff}
+.auth-form{display:none}
+.auth-form.active{display:block}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;margin-bottom:6px;font-size:13px;color:var(--text2)}
+.form-group input{width:100%;padding:10px 14px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:14px;outline:none;transition:.3s}
+.form-group input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(88,166,255,.15)}
+.auth-btn{width:100%;padding:12px;background:linear-gradient(135deg,var(--accent),var(--purple));color:#fff;border:none;border-radius:var(--radius);font-size:15px;font-weight:600;cursor:pointer;transition:.3s;margin-top:8px}
+.auth-btn:hover{opacity:.9;transform:translateY(-1px)}
+.auth-guest{width:100%;padding:10px;background:transparent;color:var(--text2);border:1px solid var(--border);border-radius:var(--radius);font-size:13px;cursor:pointer;margin-top:12px;transition:.3s}
+.auth-guest:hover{border-color:var(--text2);color:var(--text)}
+.auth-error{color:var(--red);font-size:12px;margin-top:4px;display:none}
+
+/* ===== MAIN LAYOUT ===== */
+.app{display:grid;grid-template-rows:40px 1fr 28px;height:100vh;opacity:0;transition:.3s}
+.app.visible{opacity:1}
+.app.hidden{display:none}
+
+/* ===== TOP BAR ===== */
+.topbar{display:flex;align-items:center;background:var(--bg2);border-bottom:1px solid var(--border);padding:0 12px;gap:8px}
+.topbar-logo{font-weight:700;font-size:15px;background:linear-gradient(135deg,var(--accent),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent;white-space:nowrap}
+.topbar-menu{display:flex;gap:2px}
+.topbar-menu button{background:none;border:none;color:var(--text2);padding:4px 10px;font-size:12px;cursor:pointer;border-radius:4px;transition:.2s}
+.topbar-menu button:hover{background:var(--bg3);color:var(--text)}
+.topbar-center{flex:1;display:flex;align-items:center;justify-content:center}
+.topbar-search{background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:4px 16px;color:var(--text);font-size:12px;width:300px;outline:none}
+.topbar-right{display:flex;align-items:center;gap:8px}
+.topbar-user{display:flex;align-items:center;gap:6px;background:var(--bg3);padding:4px 12px;border-radius:20px;font-size:12px;cursor:pointer}
+.topbar-user img{width:20px;height:20px;border-radius:50%}
+.topbar-btn{background:none;border:none;color:var(--text2);cursor:pointer;padding:4px 8px;border-radius:4px;font-size:16px;transition:.2s}
+.topbar-btn:hover{background:var(--bg3);color:var(--text)}
+
+/* ===== WORKSPACE ===== */
+.workspace{display:grid;grid-template-columns:auto 1fr auto;overflow:hidden}
+
+/* ===== SIDEBAR ===== */
+.sidebar{width:48px;background:var(--bg2);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:8px 0;gap:4px}
+.sidebar-btn{width:36px;height:36px;display:flex;align-items:center;justify-content:center;border:none;background:none;color:var(--text2);cursor:pointer;border-radius:var(--radius);font-size:18px;transition:.2s;position:relative}
+.sidebar-btn:hover,.sidebar-btn.active{background:var(--bg3);color:var(--text)}
+.sidebar-btn.active::before{content:'';position:absolute;left:-8px;width:2px;height:24px;background:var(--accent);border-radius:2px}
+
+/* ===== EXPLORER ===== */
+.explorer{width:260px;background:var(--bg2);border-right:1px solid var(--border);display:none;flex-direction:column}
+.explorer.visible{display:flex}
+.explorer-header{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;color:var(--text2);border-bottom:1px solid var(--border)}
+.explorer-actions{display:flex;gap:4px}
+.explorer-actions button{background:none;border:none;color:var(--text2);cursor:pointer;padding:2px 4px;border-radius:3px;font-size:14px}
+.explorer-actions button:hover{background:var(--bg3);color:var(--text)}
+.file-tree{flex:1;overflow-y:auto;padding:4px 0}
+.file-item{display:flex;align-items:center;gap:6px;padding:4px 16px 4px calc(16px + var(--indent,0)*16px);cursor:pointer;font-size:13px;transition:.15s;white-space:nowrap}
+.file-item:hover{background:var(--bg3)}
+.file-item.active{background:var(--bg4)}
+.file-item .icon{font-size:14px;width:18px;text-align:center;flex-shrink:0}
+.file-item .name{overflow:hidden;text-overflow:ellipsis}
+.file-item .delete-btn{margin-left:auto;opacity:0;background:none;border:none;color:var(--red);cursor:pointer;font-size:12px;padding:2px 4px;border-radius:3px}
+.file-item:hover .delete-btn{opacity:1}
+.folder-toggle{font-size:10px;transition:.2s;width:16px;text-align:center;flex-shrink:0}
+.folder-toggle.open{transform:rotate(90deg)}
+
+/* ===== EDITOR AREA ===== */
+.editor-area{display:flex;flex-direction:column;overflow:hidden;min-width:0}
+
+/* ===== TABS ===== */
+.tabs{display:flex;background:var(--bg2);border-bottom:1px solid var(--border);overflow-x:auto;min-height:36px}
+.tab{display:flex;align-items:center;gap:6px;padding:0 16px;height:36px;font-size:13px;cursor:pointer;border-right:1px solid var(--border);background:var(--bg2);color:var(--text2);white-space:nowrap;transition:.15s;position:relative}
+.tab.active{background:var(--bg);color:var(--text)}
+.tab.active::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:var(--accent)}
+.tab .modified{width:8px;height:8px;border-radius:50%;background:var(--text2)}
+.tab .close-tab{background:none;border:none;color:var(--text2);cursor:pointer;font-size:14px;padding:2px;border-radius:3px;line-height:1}
+.tab .close-tab:hover{background:var(--bg4);color:var(--text)}
+
+/* ===== EDITOR CONTAINER ===== */
+.editor-container{flex:1;display:flex;overflow:hidden}
+.editor-wrapper{flex:1;display:flex;flex-direction:column;min-width:0}
+.editor-wrapper .CodeMirror{flex:1;font-size:14px;font-family:'Fira Code','Cascadia Code','Consolas',monospace;line-height:1.6}
+
+/* ===== PANELS ===== */
+.panel{background:var(--bg2);border-top:1px solid var(--border);display:none;flex-direction:column}
+.panel.visible{display:flex}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:8px 16px;border-bottom:1px solid var(--border);font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;color:var(--text2)}
+.panel-header button{background:none;border:none;color:var(--text2);cursor:pointer;padding:2px 6px;border-radius:3px;font-size:16px}
+.panel-header button:hover{background:var(--bg3);color:var(--text)}
+.panel-body{flex:1;overflow:auto}
+
+/* ===== TERMINAL ===== */
+.terminal-body{padding:12px;font-family:'Cascadia Code','Consolas',monospace;font-size:13px}
+.terminal-line{margin-bottom:2px;white-space:pre-wrap;word-break:break-all}
+.terminal-line .prompt{color:var(--green)}
+.terminal-line .cmd{color:var(--text)}
+.terminal-line .output{color:var(--text2)}
+.terminal-line .error{color:var(--red)}
+.terminal-input-line{display:flex;align-items:center;gap:8px}
+.terminal-input-line .prompt{color:var(--green);font-weight:600}
+.terminal-input{background:none;border:none;color:var(--text);font-family:inherit;font-size:13px;outline:none;flex:1}
+
+/* ===== PREVIEW ===== */
+.preview-frame{width:100%;height:100%;border:none;background:#fff}
+
+/* ===== AI PANEL ===== */
+.ai-panel{width:360px;background:var(--bg2);border-left:1px solid var(--border);display:none;flex-direction:column}
+.ai-panel.visible{display:flex}
+.ai-messages{flex:1;overflow-y:auto;padding:12px}
+.ai-msg{margin-bottom:12px;display:flex;gap:8px}
+.ai-msg.user{flex-direction:row-reverse}
+.ai-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+.ai-msg.assistant .ai-avatar{background:linear-gradient(135deg,var(--accent),var(--purple))}
+.ai-msg.user .ai-avatar{background:var(--bg4)}
+.ai-bubble{max-width:85%;padding:10px 14px;border-radius:12px;font-size:13px;line-height:1.5}
+.ai-msg.assistant .ai-bubble{background:var(--bg3);border-top-left-radius:4px}
+.ai-msg.user .ai-bubble{background:var(--accent);color:#fff;border-top-right-radius:4px}
+.ai-bubble code{background:var(--bg);padding:2px 6px;border-radius:4px;font-size:12px;font-family:'Consolas',monospace}
+.ai-bubble pre{background:var(--bg);padding:10px;border-radius:8px;margin:8px 0;overflow-x:auto;font-size:12px}
+.ai-bubble pre code{background:none;padding:0}
+.ai-input-area{padding:12px;border-top:1px solid var(--border);display:flex;gap:8px}
+.ai-input{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:20px;padding:8px 16px;color:var(--text);font-size:13px;outline:none}
+.ai-input:focus{border-color:var(--accent)}
+.ai-send{width:36px;height:36px;border-radius:50%;background:var(--accent);border:none;color:#fff;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:.2s}
+.ai-send:hover{opacity:.8;transform:scale(1.05)}
+.ai-suggestions{padding:8px 12px;display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid var(--border)}
+.ai-suggestion{background:var(--bg3);border:1px solid var(--border);border-radius:16px;padding:4px 12px;font-size:11px;color:var(--text2);cursor:pointer;transition:.2s;white-space:nowrap}
+.ai-suggestion:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ===== STATUSBAR ===== */
+.statusbar{display:flex;align-items:center;justify-content:space-between;background:var(--bg2);border-top:1px solid var(--border);padding:0 12px;font-size:11px;color:var(--text2)}
+.statusbar-left,.statusbar-right{display:flex;align-items:center;gap:12px}
+.status-item{display:flex;align-items:center;gap:4px;cursor:pointer;padding:0 4px;border-radius:3px}
+.status-item:hover{background:var(--bg3)}
+
+/* ===== MODAL ===== */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:5000;display:none;align-items:center;justify-content:center}
+.modal-overlay.visible{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border);border-radius:12px;padding:24px;width:500px;max-width:95vw;max-height:80vh;overflow-y:auto}
+.modal h3{margin-bottom:16px;font-size:16px}
+.modal-input{width:100%;padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:14px;outline:none;margin-bottom:12px}
+.modal-input:focus{border-color:var(--accent)}
+
+/* ===== NOTIFICATION ===== */
+.notification{position:fixed;top:60px;right:20px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius);padding:12px 20px;font-size:13px;z-index:6000;transform:translateX(120%);transition:.3s;box-shadow:0 8px 30px rgba(0,0,0,.4)}
+.notification.show{transform:translateX(0)}
+.notification.success{border-left:3px solid var(--green)}
+.notification.error{border-left:3px solid var(--red)}
+.notification.info{border-left:3px solid var(--accent)}
+
+/* ===== WELCOME ===== */
+.welcome{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;text-align:center;padding:40px}
+.welcome h2{font-size:28px;margin-bottom:8px;background:linear-gradient(135deg,var(--accent),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.welcome p{color:var(--text2);font-size:14px;margin-bottom:24px}
+.welcome-shortcuts{text-align:left;background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:20px}
+.welcome-shortcuts div{display:flex;justify-content:space-between;padding:6px 0;font-size:13px}
+.welcome-shortcuts kbd{background:var(--bg);border:1px solid var(--border);padding:2px 8px;border-radius:4px;font-size:11px;font-family:monospace}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  .explorer,.ai-panel{position:fixed;top:40px;bottom:28px;z-index:100}
+  .explorer{left:48px}
+  .ai-panel{right:0}
+  .topbar-search{width:150px}
+}
+
+/* ===== LOADING ===== */
+.typing-dots span{animation:blink 1.4s infinite both;font-size:18px}
+.typing-dots span:nth-child(2){animation-delay:.2s}
+.typing-dots span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:0}40%{opacity:1}}
+
+/* ===== CONTEXT MENU ===== */
+.context-menu{position:fixed;background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:4px;min-width:180px;z-index:7000;box-shadow:0 8px 30px rgba(0,0,0,.5);display:none}
+.context-menu.visible{display:block}
+.context-item{padding:6px 12px;font-size:13px;cursor:pointer;border-radius:4px;display:flex;align-items:center;gap:8px}
+.context-item:hover{background:var(--bg3)}
+.context-sep{height:1px;background:var(--border);margin:4px 0}
+</style>
+</head>
+<body>
+
+<!-- ===== AUTH SCREEN ===== -->
+<div class="auth-overlay" id="authScreen">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <h1>⚡ CodeVerse</h1>
+      <p>Online IDE — Kod yozing, AI yordam beradi!</p>
+    </div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchAuthTab('login')">🔑 Kirish</div>
+      <div class="auth-tab" onclick="switchAuthTab('register')">📝 Ro'yxat</div>
+    </div>
+    <form class="auth-form active" id="loginForm" onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label>📧 Email yoki username</label>
+        <input type="text" id="loginEmail" placeholder="username" required>
+      </div>
+      <div class="form-group">
+        <label>🔒 Parol</label>
+        <input type="password" id="loginPass" placeholder="••••••••" required>
+        <div class="auth-error" id="loginError">Email yoki parol noto'g'ri!</div>
+      </div>
+      <button type="submit" class="auth-btn">🚀 Kirish</button>
+      <button type="button" class="auth-guest" onclick="guestLogin()">👤 Mehmon sifatida kirish</button>
+    </form>
+    <form class="auth-form" id="registerForm" onsubmit="handleRegister(event)">
+      <div class="form-group">
+        <label>👤 Username</label>
+        <input type="text" id="regUser" placeholder="username123" required>
+      </div>
+      <div class="form-group">
+        <label>📧 Email</label>
+        <input type="email" id="regEmail" placeholder="email@example.com" required>
+      </div>
+      <div class="form-group">
+        <label>🔒 Parol</label>
+        <input type="password" id="regPass" placeholder="Kamida 4 ta belgi" required minlength="4">
+        <div class="auth-error" id="regError">Username allaqachon mavjud!</div>
+      </div>
+      <button type="submit" class="auth-btn">✨ Ro'yxatdan o'tish</button>
+    </form>
+  </div>
+</div>
+
+<!-- ===== MAIN APP ===== -->
+<div class="app hidden" id="mainApp">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo">⚡ CodeVerse</div>
+    <div class="topbar-menu">
+      <button onclick="newFile()">📄 Fayl</button>
+      <button onclick="runCode()">▶️ Ishga tushirish</button>
+      <button onclick="downloadCode()">💾 Yuklab olish</button>
+      <button onclick="formatCode()">🎨 Format</button>
+    </div>
+    <div class="topbar-center">
+      <input class="topbar-search" placeholder="🔍 Kodda qidirish... (Ctrl+F)" id="searchInput" onkeydown="if(event.key==='Enter')searchInCode()">
+    </div>
+    <div class="topbar-right">
+      <span id="guestBadge" style="display:none;color:var(--orange);font-size:11px">Mehmon rejimi</span>
+      <div class="topbar-user" id="topUser" onclick="showUserMenu()">
+        <span id="topUsername">User</span>
+      </div>
+      <button class="topbar-btn" onclick="logout()" title="Chiqish">🚪</button>
+    </div>
+  </div>
+
+  <!-- WORKSPACE -->
+  <div class="workspace">
+    <!-- SIDEBAR ICONS -->
+    <div class="sidebar">
+      <button class="sidebar-btn active" onclick="togglePanel('explorer',this)" title="Fayllar">📁</button>
+      <button class="sidebar-btn" onclick="togglePanel('search',this)" title="Qidirish">🔍</button>
+      <button class="sidebar-btn" onclick="togglePanel('git',this)" title="Git">🔀</button>
+      <button class="sidebar-btn" onclick="toggleAI()" title="AI Yordamchi">🤖</button>
+      <button class="sidebar-btn" onclick="toggleTerminal()" title="Terminal">⌨️</button>
+      <button class="sidebar-btn" onclick="togglePreview()" title="Preview">👁️</button>
+      <div style="flex:1"></div>
+      <button class="sidebar-btn" onclick="toggleTheme()" title="Mavzu">🎨</button>
+      <button class="sidebar-btn" onclick="showSettings()" title="Sozlamalar">⚙️</button>
+    </div>
+
+    <!-- EXPLORER -->
+    <div class="explorer visible" id="explorerPanel">
+      <div class="explorer-header">
+        <span>📂 EXPLORER</span>
+        <div class="explorer-actions">
+          <button onclick="newFile()" title="Yangi fayl">📄+</button>
+          <button onclick="newFolder()" title="Yangi papka">📁+</button>
+          <button onclick="collapseAll()" title="Yig'ish">📥</button>
+        </div>
+      </div>
+      <div class="file-tree" id="fileTree"></div>
+    </div>
+
+    <!-- EDITOR AREA -->
+    <div class="editor-area">
+      <div class="tabs" id="tabs"></div>
+      <div class="editor-container">
+        <div class="editor-wrapper">
+          <div id="editorContainer" style="flex:1;overflow:hidden"></div>
+          <!-- Welcome screen -->
+          <div class="welcome" id="welcomeScreen">
+            <h2>⚡ CodeVerse ga xush kelibsiz!</h2>
+            <p>Kod yozishni boshlang yoki AI dan yordam so'rang</p>
+            <div class="welcome-shortcuts">
+              <div><span>Yangi fayl</span><kbd>Ctrl+N</kbd></div>
+              <div><span>Saqlash</span><kbd>Ctrl+S</kbd></div>
+              <div><span>Ishga tushirish</span><kbd>Ctrl+Enter</kbd></div>
+              <div><span>Qidirish</span><kbd>Ctrl+F</kbd></div>
+              <div><span>AI yordam</span><kbd>Ctrl+I</kbd></div>
+              <div><span>Terminal</span><kbd>Ctrl+`</kbd></div>
+              <div><span>Preview</span><kbd>Ctrl+P</kbd></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI PANEL -->
+        <div class="ai-panel" id="aiPanel">
+          <div class="panel-header">
+            <span>🤖 AI Yordamchi</span>
+            <button onclick="toggleAI()">✕</button>
+          </div>
+          <div class="ai-messages" id="aiMessages">
+            <div class="ai-msg assistant">
+              <div class="ai-avatar">🤖</div>
+              <div class="ai-bubble">
+                Salom! Men sizning AI yordamchingizman. 🎉<br><br>
+                Menga quyidagilarni so'rashingiz mumkin:<br>
+                • <code>HTML sahifa yarat</code><br>
+                • <code>JavaScript funksiyasi yoz</code><br>
+                • <code>CSS dizayn qil</code><br>
+                • <code>Kodni tushuntir</code><br>
+                • <code>Bug topib ber</code><br>
+                • <code>Kodni yaxshila</code><br><br>
+                Nima yozishim kerak? 😊
+              </div>
+            </div>
+          </div>
+          <div class="ai-suggestions">
+            <span class="ai-suggestion" onclick="aiSuggest('HTML sahifa yarat')">📄 HTML sahifa</span>
+            <span class="ai-suggestion" onclick="aiSuggest('To-do list yarat')">✅ To-Do App</span>
+            <span class="ai-suggestion" onclick="aiSuggest('Calculator yoz')">🔢 Calculator</span>
+            <span class="ai-suggestion" onclick="aiSuggest('Snake game yarat')">🐍 Snake Game</span>
+            <span class="ai-suggestion" onclick="aiSuggest('Login form yarat')">🔐 Login Form</span>
+            <span class="ai-suggestion" onclick="aiSuggest('Weather app yarat')">🌤️ Weather App</span>
+          </div>
+          <div class="ai-input-area">
+            <input class="ai-input" id="aiInput" placeholder="AI dan so'rang..." onkeydown="if(event.key==='Enter')sendAI()">
+            <button class="ai-send" onclick="sendAI()">➤</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TERMINAL -->
+      <div class="panel" id="terminalPanel" style="height:200px">
+        <div class="panel-header">
+          <span>⌨️ TERMINAL</span>
+          <div style="display:flex;gap:4px">
+            <button onclick="clearTerminal()" title="Tozalash">🗑️</button>
+            <button onclick="toggleTerminal()" title="Yopish">✕</button>
+          </div>
+        </div>
+        <div class="panel-body" id="terminalBody">
+          <div class="terminal-body" id="terminalContent">
+            <div class="terminal-line"><span class="output">CodeVerse Terminal v1.0</span></div>
+            <div class="terminal-line"><span class="output">Yordam uchun 'help' yozing</span></div>
+            <div class="terminal-line">&nbsp;</div>
+          </div>
+          <div class="terminal-input-line">
+            <span class="prompt">❯</span>
+            <input class="terminal-input" id="terminalInput" placeholder="Buyruq yozing..." onkeydown="handleTerminal(event)">
+          </div>
+        </div>
+      </div>
+
+      <!-- PREVIEW PANEL -->
+      <div class="panel" id="previewPanel" style="height:300px">
+        <div class="panel-header">
+          <span>👁️ PREVIEW</span>
+          <div style="display:flex;gap:4px">
+            <button onclick="runCode()" title="Yangilash">🔄</button>
+            <button onclick="togglePreview()" title="Yopish">✕</button>
+          </div>
+        </div>
+        <div class="panel-body" style="flex:1">
+          <iframe class="preview-frame" id="previewFrame" sandbox="allow-scripts allow-modals allow-same-origin"></iframe>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STATUSBAR -->
+  <div class="statusbar">
+    <div class="statusbar-left">
+      <span class="status-item" onclick="toggleTerminal()">⌨️ Terminal</span>
+      <span class="status-item" id="statusBranch">🔀 main</span>
+      <span class="status-item" id="statusErrors">✕ 0 ⚠ 0</span>
+    </div>
+    <div class="statusbar-right">
+      <span class="status-item" id="statusPos">Ln 1, Col 1</span>
+      <span class="status-item" id="statusLang">HTML</span>
+      <span class="status-item">UTF-8</span>
+      <span class="status-item" id="statusSaved">✓ Saqlangan</span>
+    </div>
+  </div>
+</div>
+
+<!-- NOTIFICATION -->
+<div class="notification" id="notification"></div>
+
+<!-- CONTEXT MENU -->
+<div class="context-menu" id="contextMenu">
+  <div class="context-item" onclick="newFile()">📄 Yangi fayl</div>
+  <div class="context-item" onclick="newFolder()">📁 Yangi papka</div>
+  <div class="context-sep"></div>
+  <div class="context-item" onclick="renameFile()">✏️ Qayta nomlash</div>
+  <div class="context-item" onclick="deleteFile()">🗑️ O'chirish</div>
+</div>
+
+<!-- CODEMIRROR SCRIPTS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/xml/xml.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/htmlmixed/htmlmixed.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/css/css.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/javascript/javascript.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closetag.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/foldgutter.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/brace-fold.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/fold/xml-fold.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/comment/comment.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/search.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/search/searchcursor.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/dialog/dialog.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/scroll/simplescrollbars.min.js"></script>
+
+<script>
+// ===== GLOBAL STATE =====
+let currentUser = null;
+let isGuest = false;
+let editor = null;
+let openFiles = [];
+let activeFile = null;
+let fileSystem = {};
+let contextTarget = null;
+let terminalHistory = [];
+let terminalHistoryIdx = -1;
+let themes = ['dracula','monokai'];
+let currentThemeIdx = 0;
+
+// ===== AUTH SYSTEM =====
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.auth-form').forEach(f => f.classList.remove('active'));
+  if (tab === 'login') {
+    document.querySelectorAll('.auth-tab')[0].classList.add('active');
+    document.getElementById('loginForm').classList.add('active');
+  } else {
+    document.querySelectorAll('.auth-tab')[1].classList.add('active');
+    document.getElementById('registerForm').classList.add('active');
+  }
+}
+
+function getUsers() {
+  return JSON.parse(localStorage.getItem('codeverse_users') || '{}');
+}
+
+function saveUsers(users) {
+  localStorage.setItem('codeverse_users', JSON.stringify(users));
+}
+
+function handleRegister(e) {
+  e.preventDefault();
+  const username = document.getElementById('regUser').value.trim();
+  const email = document.getElementById('regEmail').value.trim();
+  const pass = document.getElementById('regPass').value;
+  const errEl = document.getElementById('regError');
+  errEl.style.display = 'none';
+
+  const users = getUsers();
+  if (users[username]) {
+    errEl.textContent = 'Bu username allaqachon mavjud!';
+    errEl.style.display = 'block';
+    return;
+  }
+  users[username] = { email, password: pass, created: Date.now(), projects: {} };
+  saveUsers(users);
+  notify('✅ Ro\'yxatdan o\'tdingiz! Endi kiring.', 'success');
+  switchAuthTab('login');
+  document.getElementById('loginEmail').value = username;
+}
+
+function handleLogin(e) {
+  e.preventDefault();
+  const username = document.getElementById('loginEmail').value.trim();
+  const pass = document.getElementById('loginPass').value;
+  const errEl = document.getElementById('loginError');
+  errEl.style.display = 'none';
+
+  const users = getUsers();
+  if (!users[username] || users[username].password !== pass) {
+    errEl.textContent = 'Username yoki parol noto\'g\'ri!';
+    errEl.style.display = 'block';
+    return;
+  }
+  loginUser(username, false);
+}
+
+function guestLogin() {
+  loginUser('Mehmon', true);
+}
+
+function loginUser(username, guest) {
+  currentUser = username;
+  isGuest = guest;
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('mainApp').classList.remove('hidden');
+  document.getElementById('mainApp').classList.add('visible');
+  document.getElementById('topUsername').textContent = username;
+  document.getElementById('guestBadge').style.display = guest ? 'inline' : 'none';
+
+  if (guest) {
+    loadDefaultFiles();
+  } else {
+    loadUserFiles();
+  }
+  initEditor();
+  renderFileTree();
+  notify(`👋 Xush kelibsiz, ${username}!`, 'success');
+}
+
+function logout() {
+  if (!isGuest && activeFile) saveCurrentFile();
+  saveAllFiles();
+  currentUser = null;
+  isGuest = false;
+  openFiles = [];
+  activeFile = null;
+  fileSystem = {};
+  if (editor) editor.toTextArea();
+  editor = null;
+  document.getElementById('mainApp').classList.add('hidden');
+  document.getElementById('mainApp').classList.remove('visible');
+  document.getElementById('authScreen').classList.remove('hidden');
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPass').value = '';
+  notify('👋 Chiqdingiz', 'info');
+}
+
+function showUserMenu() {
+  if (isGuest) {
+    notify('🔐 Mehmon rejimida. Hisob oching!', 'info');
+  }
+}
+
+// ===== FILE SYSTEM =====
+function loadDefaultFiles() {
+  fileSystem = {
+    'index.html': {
+      content: `<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mening Saytim</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 Salom Dunyo!</h1>
+    <p>CodeVerse da yaratilgan</p>
+    <button id="myBtn">Bosib ko'ring!</button>
+    <div id="output"></div>
+  </div>
+  <script src="script.js"><\/script>
+</body>
+</html>`,
+      language: 'htmlmixed'
+    },
+    'style.css': {
+      content: `* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background: linear-gradient(135deg, #0d1117, #161b22);
+  color: #c9d1d9;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container {
+  text-align: center;
+  padding: 40px;
+}
+
+h1 {
+  font-size: 3em;
+  background: linear-gradient(135deg, #58a6ff, #bc8cff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin-bottom: 10px;
+}
+
+p {
+  color: #8b949e;
+  font-size: 1.2em;
+  margin-bottom: 20px;
+}
+
+button {
+  padding: 12px 32px;
+  font-size: 16px;
+  background: linear-gradient(135deg, #58a6ff, #bc8cff);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+button:hover {
+  transform: scale(1.05);
+}
+
+#output {
+  margin-top: 20px;
+  font-size: 1.5em;
+}`,
+      language: 'css'
+    },
+    'script.js': {
+      content: `let count = 0;
+
+document.getElementById('myBtn').addEventListener('click', function() {
+  count++;
+  const output = document.getElementById('output');
+  output.textContent = 'Siz ' + count + ' marta bosdingiz! 🎉';
+
+  if (count % 5 === 0) {
+    alert('Tabriklaymiz! ' + count + ' marta bosdingiz! 🏆');
+  }
+});
+
+console.log('✅ Script yuklandi!');`,
+      language: 'javascript'
+    }
+  };
+}
+
+function loadUserFiles() {
+  const users = getUsers();
+  if (users[currentUser] && users[currentUser].projects) {
+    fileSystem = users[currentUser].projects;
+  } else {
+    loadDefaultFiles();
+  }
+}
+
+function saveAllFiles() {
+  if (isGuest || !currentUser) return;
+  // Save current file content first
+  if (activeFile && editor) {
+    fileSystem[activeFile].content = editor.getValue();
+  }
+  const users = getUsers();
+  if (!users[currentUser]) return;
+  users[currentUser].projects = fileSystem;
+  saveUsers(users);
+}
+
+function saveCurrentFile() {
+  if (!activeFile || !editor) return;
+  fileSystem[activeFile].content = editor.getValue();
+  saveAllFiles();
+}
+
+function getLanguage(filename) {
+  const ext = filename.split('.').pop().toLowerCase();
+  const map = {
+    'html': 'htmlmixed', 'htm': 'htmlmixed',
+    'css': 'css', 'scss': 'css',
+    'js': 'javascript', 'jsx': 'javascript', 'ts': 'javascript',
+    'py': 'python', 'json': 'javascript',
+    'xml': 'xml', 'svg': 'xml'
+  };
+  return map[ext] || 'htmlmixed';
+}
+
+function getFileIcon(filename) {
+  const ext = filename.split('.').pop().toLowerCase();
+  const icons = {
+    'html': '🌐', 'htm': '🌐', 'css': '🎨', 'js': '⚡',
+    'jsx': '⚛️', 'ts': '🔷', 'py': '🐍', 'json': '📋',
+    'xml': '📄', 'svg': '🖼️', 'md': '📝', 'txt': '📄'
+  };
+  return icons[ext] || '📄';
+}
+
+// ===== EDITOR =====
+function initEditor() {
+  const container = document.getElementById('editorContainer');
+  if (editor) editor.toTextArea();
+
+  const textarea = document.createElement('textarea');
+  container.innerHTML = '';
+  container.appendChild(textarea);
+
+  editor = CodeMirror.fromTextArea(textarea, {
+    theme: 'dracula',
+    lineNumbers: true,
+    autoCloseTags: true,
+    autoCloseBrackets: true,
+    matchBrackets: true,
+    styleActiveLine: true,
+    foldGutter: true,
+    gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
+    scrollbarStyle: 'simple',
+    tabSize: 2,
+    indentWithTabs: false,
+    lineWrapping: true,
+    extraKeys: {
+      'Ctrl-Space': 'autocomplete',
+      'Ctrl-/': 'toggleComment',
+      'Ctrl-Enter': () => runCode(),
+      'Ctrl-S': (cm) => { saveCurrentFile(); notify('💾 Saqlandi!', 'success'); },
+      'Ctrl-N': () => newFile(),
+      'Ctrl-P': () => togglePreview(),
+      'Ctrl-`': () => toggleTerminal(),
+      'Ctrl-I': () => toggleAI(),
+      'Tab': (cm) => {
+        if (cm.somethingSelected()) cm.indentSelection('add');
+        else cm.execCommand('indentMore');
+      },
+      'Shift-Tab': (cm) => cm.execCommand('indentLess')
+    }
+  });
+
+  editor.on('cursorActivity', () => {
+    const pos = editor.getCursor();
+    document.getElementById('statusPos').textContent = `Ln ${pos.line + 1}, Col ${pos.ch + 1}`;
+    if (activeFile) {
+      document.getElementById('statusSaved').textContent = '○ O\'zgartirilgan';
+    }
+  });
+
+  editor.on('change', () => {
+    if (activeFile) {
+      document.getElementById('statusSaved').textContent = '○ O\'zgartirilgan';
+    }
+  });
+
+  // Open first file
+  const firstFile = Object.keys(fileSystem)[0];
+  if (firstFile) openFile(firstFile);
+
+  document.getElementById('welcomeScreen').style.display = 'none';
+}
+
+// ===== FILE MANAGEMENT =====
+function newFile() {
+  const name = prompt('Fayl nomi:', 'yangi.html');
+  if (!name) return;
+  if (fileSystem[name]) {
+    notify('⚠️ Bu fayl allaqachon mavjud!', 'error');
+    return;
+  }
+  fileSystem[name] = {
+    content: '',
+    language: getLanguage(name)
+  };
+  renderFileTree();
+  openFile(name);
+  saveAllFiles();
+  notify(`📄 ${name} yaratildi`, 'success');
+}
+
+function newFolder() {
+  notify('📁 Papkalar hozircha qo\'llab-quvvatlanmaydi', 'info');
+}
+
+function openFile(name) {
+  if (!fileSystem[name]) return;
+
+  if (!openFiles.includes(name)) {
+    openFiles.push(name);
+  }
+  activeFile = name;
+
+  // Set editor content
+  if (editor) {
+    editor.setValue(fileSystem[name].content);
+    editor.setOption('mode', fileSystem[name].language);
+    editor.refresh();
+    editor.focus();
+  }
+
+  // Update status
+  document.getElementById('statusLang').textContent = name.split('.').pop().toUpperCase();
+  document.getElementById('statusSaved').textContent = '✓ Saqlangan';
+
+  renderTabs();
+  renderFileTree();
+}
+
+function closeFile(name) {
+  const idx = openFiles.indexOf(name);
+  if (idx === -1) return;
+  openFiles.splice(idx, 1);
+
+  if (activeFile === name) {
+    if (openFiles.length > 0) {
+      const newIdx = Math.min(idx, openFiles.length - 1);
+      openFile(openFiles[newIdx]);
+    } else {
+      activeFile = null;
+      if (editor) editor.setValue('');
+      document.getElementById('welcomeScreen').style.display = 'flex';
+    }
+  }
+  renderTabs();
+}
+
+function deleteFile(name) {
+  if (!name && contextTarget) name = contextTarget;
+  if (!name || !fileSystem[name]) return;
+  if (!confirm(`"${name}" ni o'chirasizmi?`)) return;
+  delete fileSystem[name];
+  closeFile(name);
+  renderFileTree();
+  saveAllFiles();
+  notify(`🗑️ ${name} o'chirildi`, 'info');
+}
+
+function renameFile(oldName) {
+  if (!oldName && contextTarget) oldName = contextTarget;
+  if (!oldName || !fileSystem[oldName]) return;
+  const newName = prompt('Yangi nom:', oldName);
+  if (!newName || newName === oldName) return;
+  fileSystem[newName] = { ...fileSystem[oldName] };
+  delete fileSystem[oldName];
+  const idx = openFiles.indexOf(oldName);
+  if (idx !== -1) openFiles[idx] = newName;
+  if (activeFile === oldName) activeFile = newName;
+  renderFileTree();
+  renderTabs();
+  saveAllFiles();
+  notify(`✏️ Qayta nomlandi: ${newName}`, 'success');
+}
+
+// ===== RENDERING =====
+function renderFileTree() {
+  const tree = document.getElementById('fileTree');
+  tree.innerHTML = '';
+  const files = Object.keys(fileSystem).sort();
+  files.forEach(name => {
+    const item = document.createElement('div');
+    item.className = 'file-item' + (name === activeFile ? ' active' : '');
+    item.style.setProperty('--indent', '0');
+    item.innerHTML = `
+      <span class="icon">${getFileIcon(name)}</span>
+      <span class="name">${name}</span>
+      <button class="delete-btn" onclick="event.stopPropagation();deleteFile('${name}')" title="O'chirish">✕</button>
+    `;
+    item.onclick = () => openFile(name);
+    item.oncontextmenu = (e) => showContextMenu(e, name);
+    tree.appendChild(item);
+  });
+}
+
+function renderTabs() {
+  const tabs = document.getElementById('tabs');
+  tabs.innerHTML = '';
+  openFiles.forEach(name => {
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (name === activeFile ? ' active' : '');
+    tab.innerHTML = `
+      <span>${getFileIcon(name)} ${name}</span>
+      <button class="close-tab" onclick="event.stopPropagation();closeFile('${name}')">✕</button>
+    `;
+    tab.onclick = () => openFile(name);
+    tabs.appendChild(tab);
+  });
+}
+
+// ===== PANELS =====
+function togglePanel(panel, btn) {
+  document.querySelectorAll('.sidebar-btn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  const panels = ['explorerPanel', 'aiPanel', 'terminalPanel', 'previewPanel'];
+  panels.forEach(p => {
+    const el = document.getElementById(p);
+    if (p === panel + 'Panel') {
+      el.classList.toggle('visible');
+    }
+  });
+
+  if (panel === 'explorer') {
+    document.getElementById('explorerPanel').classList.toggle('visible');
+  }
+  setTimeout(() => { if (editor) editor.refresh(); }, 100);
+}
+
+function toggleAI() {
+  document.getElementById('aiPanel').classList.toggle('visible');
+  setTimeout(() => { if (editor) editor.refresh(); }, 100);
+}
+
+function toggleTerminal() {
+  document.getElementById('terminalPanel').classList.toggle('visible');
+  setTimeout(() => {
+    if (editor) editor.refresh();
+    document.getElementById('terminalInput').focus();
+  }, 100);
+}
+
+function togglePreview() {
+  document.getElementById('previewPanel').classList.toggle('visible');
+  setTimeout(() => { if (editor) editor.refresh(); }, 100);
+  runCode();
+}
+
+// ===== RUN CODE =====
+function runCode() {
+  // Combine all files into one HTML
+  let htmlContent = fileSystem['index.html']?.content || '';
+  let cssContent = fileSystem['style.css']?.content || '';
+  let jsContent = fileSystem['script.js']?.content || '';
+
+  // Also check for any other css files
+  Object.keys(fileSystem).forEach(name => {
+    if (name.endsWith('.css') && name !== 'style.css') {
+      cssContent += '\n' + fileSystem[name].content;
+    }
+  });
+
+  // Inject CSS
+  if (cssContent) {
+    htmlContent = htmlContent.replace('</head>', `<style>${cssContent}</style></head>`);
+  }
+
+  // Inject JS
+  if (jsContent) {
+    htmlContent = htmlContent.replace('</body>', `<script>${jsContent}<\/script></body>`);
+  }
+
+  // If no HTML file, wrap everything
+  if (!fileSystem['index.html']) {
+    htmlContent = `<!DOCTYPE html><html><head><style>${cssContent}</style></head><body>${htmlContent}<script>${jsContent}<\/script></body></html>`;
+  }
+
+  const frame = document.getElementById('previewFrame');
+  frame.srcdoc = htmlContent;
+
+  // Show preview panel if hidden
+  const pp = document.getElementById('previewPanel');
+  if (!pp.classList.contains('visible')) {
+    pp.classList.add('visible');
+    setTimeout(() => { if (editor) editor.refresh(); }, 100);
+  }
+
+  addTerminalLine('output', '✅ Kod ishga tushirildi!');
+  notify('▶️ Kod ishga tushirildi!', 'success');
+}
+
+// ===== TERMINAL =====
+function handleTerminal(e) {
+  if (e.key === 'Enter') {
+    const input = document.getElementById('terminalInput');
+    const cmd = input.value.trim();
+    input.value = '';
+    if (!cmd) return;
+
+    terminalHistory.push(cmd);
+    terminalHistoryIdx = terminalHistory.length;
+
+    addTerminalLine('cmd', `❯ ${cmd}`);
+    processCommand(cmd);
+  } else if (e.key === 'ArrowUp') {
+    e.preventDefault();
+    if (terminalHistoryIdx > 0) {
+      terminalHistoryIdx--;
+      document.getElementById('terminalInput').value = terminalHistory[terminalHistoryIdx];
+    }
+  } else if (e.key === 'ArrowDown') {
+    e.preventDefault();
+    if (terminalHistoryIdx < terminalHistory.length - 1) {
+      terminalHistoryIdx++;
+      document.getElementById('terminalInput').value = terminalHistory[terminalHistoryIdx];
+    } else {
+      terminalHistoryIdx = terminalHistory.length;
+      document.getElementById('terminalInput').value = '';
+    }
+  }
+}
+
+function processCommand(cmd) {
+  const parts = cmd.split(' ');
+  const command = parts[0].toLowerCase();
+
+  switch (command) {
+    case 'help':
+      addTerminalLine('output', `Mavjud buyruqlar:
+  help          - Yordam
+  ls            - Fayllar ro'yxati
+  cat <fayl>    - Fayl mazmuni
+  clear         - Terminalni tozalash
+  run           - Kodni ishga tushirish
+  new <fayl>    - Yangi fayl yaratish
+  rm <fayl>     - Faylni o'chirish
+  echo <matn>   - Matn chiqarish
+  date          - Sana va vaqt
+  whoami        - Foydalanuvchi
+  pwd           - Joriy papka
+  files         - Barcha fayllar va o'lchami
+  stats         - Statistika
+  theme         - Mavzuni o'zgartirish`);
+      break;
+    case 'ls':
+      const files = Object.keys(fileSystem).join('  ');
+      addTerminalLine('output', files || '(bo\'sh)');
+      break;
+    case 'cat':
+      if (parts[1] && fileSystem[parts[1]]) {
+        addTerminalLine('output', fileSystem[parts[1]].content);
+      } else {
+        addTerminalLine('error', `Fayl topilmadi: ${parts[1] || '(nom ko\'rsatilmagan)'}`);
+      }
+      break;
+    case 'clear':
+      clearTerminal();
+      break;
+    case 'run':
+      runCode();
+      break;
+    case 'new':
+      if (parts[1]) {
+        fileSystem[parts[1]] = { content: '', language: getLanguage(parts[1]) };
+        renderFileTree();
+        saveAllFiles();
+        addTerminalLine('output', `✅ ${parts[1]} yaratildi`);
+      } else {
+        addTerminalLine('error', 'Fayl nomini kiriting: new fayl.html');
+      }
+      break;
+    case 'rm':
+      if (parts[1] && fileSystem[parts[1]]) {
+        delete fileSystem[parts[1]];
+        closeFile(parts[1]);
+        renderFileTree();
+        saveAllFiles();
+        addTerminalLine('output', `✅ ${parts[1]} o'chirildi`);
+      } else {
+        addTerminalLine('error', `Fayl topilmadi: ${parts[1]}`);
+      }
+      break;
+    case 'echo':
+      addTerminalLine('output', parts.slice(1).join(' '));
+      break;
+    case 'date':
+      addTerminalLine('output', new Date().toLocaleString('uz-UZ'));
+      break;
+    case 'whoami':
+      addTerminalLine('output', isGuest ? 'Mehmon' : currentUser);
+      break;
+    case 'pwd':
+      addTerminalLine('output', '/home/' + (isGuest ? 'guest' : currentUser));
+      break;
+    case 'files':
+      let output = 'Fayl                  | O\'lcham (bayt)\n';
+      output += '─'.repeat(40) + '\n';
+      Object.keys(fileSystem).forEach(name => {
+        const size = fileSystem[name].content.length;
+        output += `${name.padEnd(22)}| ${size}\n`;
+      });
+      addTerminalLine('output', output);
+      break;
+    case 'stats':
+      const totalFiles = Object.keys(fileSystem).length;
+      const totalChars = Object.values(fileSystem).reduce((a, f) => a + f.content.length, 0);
+      const totalLines = Object.values(fileSystem).reduce((a, f) => a + f.content.split('\n').length, 0);
+      addTerminalLine('output', `📊 Statistika:
+  Fayllar: ${totalFiles}
+  Belgilar: ${totalChars}
+  Qatorlar: ${totalLines}`);
+      break;
+    case 'theme':
+      toggleTheme();
+      addTerminalLine('output', '🎨 Mavzu o\'zgartirildi');
+      break;
+    default:
+      addTerminalLine('error', `Noma'lum buyruq: ${command}. Yordam uchun 'help' yozing.`);
+  }
+}
+
+function addTerminalLine(type, text) {
+  const content = document.getElementById('terminalContent');
+  const line = document.createElement('div');
+  line.className = 'terminal-line';
+  line.innerHTML = `<span class="${type}">${text.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</span>`;
+  content.appendChild(line);
+  content.parentElement.scrollTop = content.parentElement.scrollHeight;
+}
+
+function clearTerminal() {
+  document.getElementById('terminalContent').innerHTML = `
+    <div class="terminal-line"><span class="output">Terminal tozalandi</span></div>
+    <div class="terminal-line">&nbsp;</div>
+  `;
+}
+
+// ===== AI ASSISTANT =====
+function sendAI() {
+  const input = document.getElementById('aiInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  addAIMessage('user', msg);
+  processAI(msg);
+}
+
+function aiSuggest(text) {
+  document.getElementById('aiInput').value = text;
+  sendAI();
+}
+
+function addAIMessage(role, text) {
+  const container = document.getElementById('aiMessages');
+  const div = document.createElement('div');
+  div.className = `ai-msg ${role}`;
+  const avatar = role === 'user' ? '👤' : '🤖';
+  div.innerHTML = `
+    <div class="ai-avatar">${avatar}</div>
+    <div class="ai-bubble">${formatAIMessage(text)}</div>
+  `;
+  container.appendChild(div);
+  container.scrollTop = container.scrollHeight;
+}
+
+function formatAIMessage(text) {
+  // Simple markdown-like formatting
+  return text
+    .replace(/```(\w*)\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>')
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+    .replace(/\n/g, '<br>');
+}
+
+function processAI(query) {
+  // Show typing
+  const container = document.getElementById('aiMessages');
+  const typing = document.createElement('div');
+  typing.className = 'ai-msg assistant';
+  typing.id = 'typingIndicator';
+  typing.innerHTML = `
+    <div class="ai-avatar">🤖</div>
+    <div class="ai-bubble"><span class="typing-dots"><span>.</span><span>.</span><span>.</span></span></div>
+  `;
+  container.appendChild(typing);
+  container.scrollTop = container.scrollHeight;
+
+  // Simulate AI response
+  setTimeout(() => {
+    const el = document.getElementById('typingIndicator');
+    if (el) el.remove();
+    const response = generateAIResponse(query);
+    addAIMessage('assistant', response);
+  }, 800 + Math.random() * 1200);
+}
+
+function generateAIResponse(query) {
+  const q = query.toLowerCase();
+
+  if (q.includes('html sahifa') || q.includes('html page') || q.includes('vebsayt')) {
+    return createFileResponse('index.html', 'htmlmixed', `<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mening Sahifam</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .card {
+      background: white;
+      padding: 40px;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.3);
+      text-align: center;
+      max-width: 500px;
+    }
+    .card h1 { color: #333; margin-bottom: 10px; }
+    .card p { color: #666; margin-bottom: 20px; }
+    .btn {
+      padding: 12px 30px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 16px;
+      cursor: pointer;
+      transition: transform .2s;
+    }
+    .btn:hover { transform: scale(1.05); }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>🚀 Salom Dunyo!</h1>
+    <p>AI yordamida yaratilgan chiroyli sahifa</p>
+    <button class="btn" onclick="alert('Hello! 👋')">Bosing!</button>
+  </div>
+</body>
+</html>`);
+  }
+
+  if (q.includes('to-do') || q.includes('todo') || q.includes('vazifa')) {
+    return createFileResponse('todo.html', 'htmlmixed', `<!DOCTYPE html>
+<html lang="uz">
+<head>
+  <meta charset="UTF-8">
+  <title>To-Do List</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0d1117;
+      color: #c9d1d9;
+      min-height: 100vh;
+      padding: 40px;
+    }
+    .container { max-width: 500px; margin: 0 auto; }
+    h1 { text-align: center; margin-bottom: 30px; color: #58a6ff; }
+    .input-row { display: flex; gap: 10px; margin-bottom: 20px; }
+    .input-row input {
+      flex: 1; padding: 12px; background: #161b22; border: 1px solid #30363d;
+      border-radius: 8px; color: #c9d1d9; font-size: 14px; outline: none;
+    }
+    .input-row input:focus { border-color: #58a6ff; }
+    .input-row button {
+      padding: 12px 20px; background: #58a6ff; color: #fff; border: none;
+      border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600;
+    }
+    .todo-item {
+      display: flex; align-items: center; gap: 12px; padding: 12px;
+      background: #161b22; border-radius: 8px; margin-bottom: 8px;
+      border: 1px solid #30363d; transition: .2s;
+    }
+    .todo-item:hover { border-color: #58a6ff; }
+    .todo-item.done span { text-decoration: line-through; color: #484f58; }
+    .todo-item input[type="checkbox"] { width: 18px; height: 18px; cursor: pointer; }
+    .todo-item span { flex: 1; font-size: 14px; }
+    .todo-item .del {
+      background: none; border: none; color: #f85149; cursor: pointer;
+      font-size: 16px; padding: 4px 8px; border-radius: 4px;
+    }
+    .todo-item .del:hover { background: rgba(248,81,73,.1); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>✅ To-Do List</h1>
+    <div class="input-row">
+      <input type="text" id="todoInput" placeholder="Yangi vazifa...">
+      <button onclick="addTodo()">Qo'shish</button>
+    </div>
+    <div id="todoList"></div>
+  </div>
+  <script>
+    let todos = JSON.parse(localStorage.getItem('todos') || '[]');
+    function render() {
+      document.getElementById('todoList').innerHTML = todos.map((t, i) =>
+        '<div class="todo-item' + (t.done ? ' done' : '') + '">' +
+        '<input type="checkbox" ' + (t.done ? 'checked' : '') + ' onchange="toggle(' + i + ')">' +
+        '<span>' + t.text + '</span>' +
+        '<button class="del" onclick="remove(' + i + ')">✕</button></div>'
+      ).join('');
+      localStorage.setItem('todos', JSON.stringify(todos));
+    }
+    function addTodo() {
+      const input = document.getElementById('todoInput');
+      if (input.value.trim()) {
+        todos.push({ text: input.value.trim(), done: false });
+        input.value = '';
+        render();
+      }
+    }
+    function toggle(i) { todos[i].done = !todos[i].done; render(); }
+    function remove(i) { todos.splice(i, 1); render(); }
+    document.getElementById('todoInput').addEventListener('keypress', e => {
+      if (e.key === 'Enter') addTodo();
+    });
+    render();
+  <\/script>
+</body>
+</html>`);
+  }
+
+  if (q.includes('calculator') || q.includes('kalkulyator') || q.includes('hisob')) {
+    return createFileResponse('calculator.html', 'htmlmixed', `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Calculator</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0d1117;
+      display: flex; align-items: center; justify-content: center;
+      min-height: 100vh;
+    }
+    .calc {
+      background: #161b22; border-radius: 16px; padding: 20px;
+      box-shadow: 0 10px 40px rgba(0,0,0,.5); width: 300px;
+    }
+    .display {
+      background: #0d1117; border-radius: 10px; padding: 20px;
+      text-align: right; margin-bottom: 16px; min-height: 80px;
+      display: flex; flex-direction: column; justify-content: flex-end;
+    }
+    .display .expr { color: #8b949e; font-size: 14px; min-height: 20px; }
+    .display .result { color: #c9d1d9; font-size: 32px; font-weight: 600; }
+    .buttons { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+    .btn {
+      padding: 16px; border: none; border-radius: 10px; font-size: 18px;
+      cursor: pointer; transition: .15s; font-weight: 500;
+    }
+    .btn:hover { transform: scale(1.05); }
+    .btn:active { transform: scale(0.95); }
+    .btn.num { background: #21262d; color: #c9d1d9; }
+    .btn.op { background: #30363d; color: #58a6ff; }
+    .btn.eq { background: #58a6ff; color: #fff; grid-column: span 2; }
+    .btn.clear { background: #f85149; color: #fff; }
+  </style>
+</head>
+<body>
+  <div class="calc">
+    <div class="display">
+      <div class="expr" id="expr"></div>
+      <div class="result" id="result">0</div>
+    </div>
+    <div class="buttons">
+      <button class="btn clear" onclick="clearCalc()">C</button>
+      <button class="btn op" onclick="addOp('(')">(</button>
+      <button class="btn op" onclick="addOp(')')">)</button>
+      <button class="btn op" onclick="addOp('/')">÷</button>
+      <button class="btn num" onclick="addNum('7')">7</button>
+      <button class="btn num" onclick="addNum('8')">8</button>
+      <button class="btn num" onclick="addNum('9')">9</button>
+      <button class="btn op" onclick="addOp('*')">×</button>
+      <button class="btn num" onclick="addNum('4')">4</button>
+      <button class="btn num" onclick="addNum('5')">5</button>
+      <button class="btn num" onclick="addNum('6')">6</button>
+      <button class="btn op" onclick="addOp('-')">−</button>
+      <button class="btn num" onclick="addNum('1')">1</button>
+      <button class="btn num" onclick="addNum('2')">2</button>
+      <button class="btn num" onclick="addNum('3')">3</button>
+      <button class="btn op" onclick="addOp('+')">+</button>
+      <button class="btn num" onclick="addNum('0')">0</button>
+      <button class="btn num" onclick="addNum('.')">.</button>
+      <button class="btn eq" onclick="calculate()">=</button>
+    </div>
+  </div>
+  <script>
+    let expression = '';
+    function updateDisplay() {
+      document.getElementById('expr').textContent = expression;
+    }
+    function addNum(n) { expression += n; updateDisplay(); }
+    function addOp(o) { expression += ' ' + o + ' '; updateDisplay(); }
+    function clearCalc() { expression = ''; document.getElementById('result').textContent = '0'; updateDisplay(); }
+    function calculate() {
+      try {
+        const result = eval(expression);
+        document.getElementById('result').textContent = result;
+        expression = String(result);
+        updateDisplay();
+      } catch(e) {
+        document.getElementById('result').textContent = 'Xato!';
+        expression = '';
+      }
+    }
+  <\/script>
+</body>
+</html>`);
+  }
+
+  if (q.includes('snake') || q.includes('ilon') || q.includes('game') || q.includes('o\'yin')) {
+    return createFileResponse('snake.html', 'htmlmixed', `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>🐍 Snake Game</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #0d1117; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; min-height: 100vh;
+      font-family: 'Segoe UI', sans-serif; color: #c9d1d9;
+    }
+    h1 { margin-bottom: 10px; color: #3fb950; }
+    .score { font-size: 18px; margin-bottom: 10px; }
+    canvas { border: 2px solid #30363d; border-radius: 8px; background: #161b22; }
+    .info { margin-top: 10px; color: #8b949e; font-size: 13px; }
+  </style>
+</head>
+<body>
+  <h1>🐍 Snake Game</h1>
+  <div class="score">Ball: <span id="score">0</span></div>
+  <canvas id="game" width="400" height="400"></canvas>
+  <div class="info">Yo'nalish: ↑ ↓ ← → yoki WASD</div>
+  <script>
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const size = 20;
+    const cols = canvas.width / size;
+    const rows = canvas.height / size;
+    let snake = [{x:10,y:10}];
+    let food = {x:15,y:15};
+    let dir = {x:1,y:0};
+    let score = 0;
+    let nextDir = {x:1,y:0};
+    document.addEventListener('keydown', e => {
+      const key = e.key;
+      if ((key==='ArrowUp'||key==='w') && dir.y!==1) nextDir={x:0,y:-1};
+      if ((key==='ArrowDown'||key==='s') && dir.y!==-1) nextDir={x:0,y:1};
+      if ((key==='ArrowLeft'||key==='a') && dir.x!==1) nextDir={x:-1,y:0};
+      if ((key==='ArrowRight'||key==='d') && dir.x!==-1) nextDir={x:1,y:0};
+    });
+    function spawnFood() {
+      food = {x:Math.floor(Math.random()*cols),y:Math.floor(Math.random()*rows)};
+      for (let s of snake) if (s.x===food.x && s.y===food.y) return spawnFood();
+    }
+    function update() {
+      dir = nextDir;
+      const head = {x:snake[0].x+dir.x, y:snake[0].y+dir.y};
+      if (head.x<0||head.x>=cols||head.y<0||head.y>=rows) return reset();
+      for (let s of snake) if (s.x===head.x&&s.y===head.y) return reset();
+      snake.unshift(head);
+      if (head.x===food.x&&head.y===food.y) { score++; document.getElementById('score').textContent=score; spawnFood(); }
+      else snake.pop();
+    }
+    function reset() { snake=[{x:10,y:10}]; dir={x:1,y:0}; nextDir={x:1,y:0}; score=0; document.getElementById('score').textContent=0; spawnFood(); }
+    function draw() {
+      ctx.fillStyle='#161b22'; ctx.fillRect(0,0,canvas.width,canvas.height);
+      ctx.fillStyle='#3fb950';
+      for (let s of snake) { ctx.fillRect(s.x*size+1,s.y*size+1,size-2,size-2); }
+      ctx.fillStyle='#f85149';
+      ctx.beginPath(); ctx.arc(food.x*size+size/2,food.y*size+size/2,size/2-2,0,Math.PI*2); ctx.fill();
+    }
+    setInterval(()=>{update();draw();},100);
+    spawnFood();
+  <\/script>
+</body>
+</html>`);
+  }
+
+  if (q.includes('login') || q.includes('kirish') || q.includes('form') || q.includes('forma')) {
+    return createFileResponse('login.html', 'htmlmixed', `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Login Form</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0d1117, #1a1a2e);
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .login-box {
+      background: #161b22; padding: 40px; border-radius: 16px;
+      width: 380px; box-shadow: 0 20px 60px rgba(0,0,0,.5);
+      border: 1px solid #30363d;
+    }
+    .login-box h2 {
+      text-align: center; margin-bottom: 30px;
+      background: linear-gradient(135deg, #58a6ff, #bc8cff);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .form-group { margin-bottom: 20px; }
+    .form-group label { display: block; margin-bottom: 6px; color: #8b949e; font-size: 13px; }
+    .form-group input {
+      width: 100%; padding: 12px 16px; background: #0d1117; border: 1px solid #30363d;
+      border-radius: 8px; color: #c9d1d9; font-size: 14px; outline: none; transition: .3s;
+    }
+    .form-group input:focus { border-color: #58a6ff; box-shadow: 0 0 0 3px rgba(88,166,255,.15); }
+    .login-btn {
+      width: 100%; padding: 12px; background: linear-gradient(135deg, #58a6ff, #bc8cff);
+      color: #fff; border: none; border-radius: 8px; font-size: 15px;
+      font-weight: 600; cursor: pointer; transition: .2s;
+    }
+    .login-btn:hover { opacity: .9; transform: translateY(-1px); }
+    .footer { text-align: center; margin-top: 20px; color: #8b949e; font-size: 13px; }
+    .footer a { color: #58a6ff; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <div class="login-box">
+    <h2>🔐 Kirish</h2>
+    <form onsubmit="handleLogin(event)">
+      <div class="form-group">
+        <label>📧 Email</label>
+        <input type="email" placeholder="email@example.com" required>
+      </div>
+      <div class="form-group">
+        <label>🔒 Parol</label>
+        <input type="password" placeholder="••••••••" required>
+      </div>
+      <button type="submit" class="login-btn">Kirish →</button>
+    </form>
+    <div class="footer">
+      Hisobingiz yo'qmi? <a href="#">Ro'yxatdan o'ting</a>
+    </div>
+  </div>
+  <script>
+    function handleLogin(e) {
+      e.preventDefault();
+      alert('✅ Kirish muvaffaqiyatli!');
+    }
+  <\/script>
+</body>
+</html>`);
+  }
+
+  if (q.includes('weather') || q.includes('ob-havo') || q.includes('havo')) {
+    return createFileResponse('weather.html', 'htmlmixed', `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Weather App</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      color: #fff;
+    }
+    .weather-card {
+      background: rgba(255,255,255,.1); backdrop-filter: blur(10px);
+      border-radius: 20px; padding: 40px; text-align: center;
+      width: 350px; border: 1px solid rgba(255,255,255,.2);
+    }
+    .city { font-size: 24px; margin-bottom: 10px; }
+    .icon { font-size: 80px; margin: 20px 0; }
+    .temp { font-size: 64px; font-weight: 700; }
+    .desc { font-size: 18px; opacity: .8; margin: 10px 0; }
+    .details { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+    .detail { background: rgba(255,255,255,.1); padding: 12px; border-radius: 12px; }
+    .detail .label { font-size: 12px; opacity: .6; }
+    .detail .value { font-size: 18px; font-weight: 600; margin-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="weather-card">
+    <div class="city">📍 Toshkent</div>
+    <div class="icon">☀️</div>
+    <div class="temp">28°</div>
+    <div class="desc">Quyoshli</div>
+    <div class="details">
+      <div class="detail">
+        <div class="label">Namlik</div>
+        <div class="value">💧 45%</div>
+      </div>
+      <div class="detail">
+        <div class="label">Shamol</div>
+        <div class="value">💨 12 km/s</div>
+      </div>
+      <div class="detail">
+        <div class="label">Bosim</div>
+        <div class="value">🌡️ 760 mm</div>
+      </div>
+      <div class="detail">
+        <div class="label">Ko'rinish</div>
+        <div class="value">👁️ 10 km</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`);
+  }
+
+  if (q.includes('kodni tushuntir') || q.includes('explain') || q.includes('nima')) {
+    const currentCode = editor ? editor.getValue() : '';
+    if (currentCode.length > 10) {
+      return `📝 Sizning kodingizni tahlil qildim:
+
+**Asosiy qismlar:**
+1. Kod **${editor ? editor.getMode().name : 'HTML'}** tilida yozilgan
+2. Jami **${currentCode.split('\n').length}** qator
+3. **${currentCode.length}** ta belgi
+
+**Maslahatlar:**
+- Kodni modullarga ajrating
+- Izohlar (comments) qo'shing
+- O'zgaruvchi nomlar aniq bo'lsin
+- DRY prinsipiga rioya qiling
+
+Agar aniq bir qismni tushuntirishim kerak bo'lsa, o'sha qatorni ko'rsating! 😊`;
+    }
+    return `📝 Avval kod yozing, keyin men uni tushuntirib beraman! 
+
+Yuqoridagi editorda kod yozing yoki mendan kod yozishimni so'rang.`;
+  }
+
+  if (q.includes('bug') || q.includes('xato') || q.includes('top') || q.includes('find')) {
+    const currentCode = editor ? editor.getValue() : '';
+    if (currentCode.length > 10) {
+      let issues = [];
+      // Simple checks
+      if (currentCode.includes('var ')) issues.push('⚠️ `var` o\'rniga `let` yoki `const` ishlating');
+      if (currentCode.includes('==') && !currentCode.includes('===')) issues.push('⚠️ `==` o\'rniga `===` ishlating');
+      if (currentCode.includes('console.log')) issues.push('ℹ️ `console.log` production da olib tashlang');
+      if (!currentCode.includes('use strict') && currentCode.includes('function')) issues.push('💡 `"use strict"` qo\'shing');
+
+      if (issues.length > 0) {
+        return `🔍 Kodda quyidagilarni topdim:\n\n${issues.join('\n')}\n\nUmuman olganda, kod yaxshi yozilgan! 👍`;
+      }
+      return `✅ Katta xatolar topilmadi! Kod toza ko'rinadi. 👍\n\nAgar aniq bir xato bo'lsa, uni ko'rsating.`;
+    }
+    return `🔍 Avval kod yozing, keyin buglarni topaman!`;
+  }
+
+  if (q.includes('yaxshila') || q.includes('improve') || q.includes('optimize') || q.includes('refactor')) {
+    return `💡 Kodni yaxshilash bo'yicha maslahatlar:
+
+**1. Strukturani yaxshilang**
+- Semantik HTML elementlar ishlating
+- CSS da BEM metodologiyasidan foydalaning
+- JavaScript da modullar yarating
+
+**2. Performance**
+- Keraksiz DOM o'zgarishlarini kamaytiring
+- Event delegation ishlating
+- Debounce/throttle dan foydalaning
+
+**3. Xavfsizlik**
+- XSS hujumlaridan saqlaning
+- Input validatsiya qiling
+- HTTPS ishlating
+
+Aniq kodni yuboring, men uni refaktor qilaman! 🛠️`;
+  }
+
+  if (q.includes('css') || q.includes('dizayn') || q.includes('design') || q.includes('style')) {
+    return createFileResponse('design.html', 'htmlmixed', `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>CSS Design Showcase</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0d1117; color: #c9d1d9; padding: 40px;
+    }
+    h1 { text-align: center; margin-bottom: 40px; font-size: 2em;
+      background: linear-gradient(135deg, #f778ba, #58a6ff);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; }
+    .card {
+      background: #161b22; border: 1px solid #30363d; border-radius: 12px;
+      padding: 24px; transition: .3s; cursor: pointer;
+    }
+    .card:hover { transform: translateY(-5px); border-color: #58a6ff; box-shadow: 0 8px 30px rgba(88,166,255,.2); }
+    .card .icon { font-size: 40px; margin-bottom: 12px; }
+    .card h3 { margin-bottom: 8px; color: #fff; }
+    .card p { color: #8b949e; font-size: 13px; }
+    .glass {
+      background: rgba(255,255,255,.05); backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,.1); border-radius: 16px;
+      padding: 30px; margin-top: 30px; text-align: center;
+    }
+    .glass h2 { margin-bottom: 10px; }
+    .glass p { color: #8b949e; }
+  </style>
+</head>
+<body>
+  <h1>🎨 CSS Design Showcase</h1>
+  <div class="grid">
+    <div class="card"><div class="icon">🎯</div><h3>Gradient</h3><p>Zamonaviy gradient ranglar</p></div>
+    <div class="card"><div class="icon">✨</div><h3>Animation</h3><p>Silliq animatsiyalar</p></div>
+    <div class="card"><div class="icon">🌊</div><h3>Glassmorphism</h3><p>Shisha effekti</p></div>
+    <div class="card"><div class="icon">📐</div><h3>Grid Layout</h3><p>Moslashuvchan tarmoq</p></div>
+  </div>
+  <div class="glass">
+    <h2>🪟 Glassmorphism</h2>
+    <p>Zamonaviy shisha effekti dizayni</p>
+  </div>
+</body>
+</html>`);
+  }
+
+  if (q.includes('javascript') || q.includes('funksiya') || q.includes('function') || q.includes('js')) {
+    return createFileResponse('app.js', 'javascript', `// 🚀 JavaScript funksiyalar to'plami
+
+// 1. Debounce funksiyasi
+function debounce(fn, delay = 300) {
+  let timer;
+  return function(...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), delay);
+  };
+}
+
+// 2. Deep clone
+function deepClone(obj) {
+  if (obj === null || typeof obj !== 'object') return obj;
+  if (Array.isArray(obj)) return obj.map(deepClone);
+  const cloned = {};
+  for (let key in obj) cloned[key] = deepClone(obj[key]);
+  return cloned;
+}
+
+// 3. Format vaqt
+function formatTime(seconds) {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return \`\${h}h \${m}m \${s}s\`;
+}
+
+// 4. Random rang
+function randomColor() {
+  return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+}
+
+// 5. LocalStorage wrapper
+const store = {
+  get(key) {
+    try { return JSON.parse(localStorage.getItem(key)); }
+    catch { return localStorage.getItem(key); }
+  },
+  set(key, value) {
+    localStorage.setItem(key, typeof value === 'object' ? JSON.stringify(value) : value);
+  },
+  remove(key) { localStorage.removeItem(key); }
+};
+
+// Foydalanish:
+// const debouncedSearch = debounce((query) => console.log(query));
+// const clone = deepClone({ a: { b: 1 } });
+// console.log(formatTime(3661)); // 1h 1m 1s
+// console.log(randomColor()); // #a3f2c1
+
+console.log('✅ Barcha funksiyalar tayyor!');`);
+  }
+
+  if (q.includes('salom') || q.includes('hi') || q.includes('hello')) {
+    return `Salom! 👋😊
+
+Men sizning AI yordamchingizman. Sizga quyidagilarda yordam bera olaman:
+
+• 📄 **Yangi sahifa yaratish** — "HTML sahifa yarat" deb yozing
+• ✅ **To-Do App** — "To-do list yarat" deb yozing
+• 🔢 **Calculator** — "Calculator yoz" deb yozing
+• 🐍 **O'yinlar** — "Snake game yarat" deb yozing
+• 🔐 **Login forma** — "Login form yarat" deb yozing
+• 🎨 **CSS dizayn** — "CSS dizayn qil" deb yozing
+• ⚡ **JavaScript** — "JavaScript funksiyasi yoz" deb yozing
+• 🔍 **Bug topish** — "Bug topib ber" deb yozing
+• 💡 **Kodni yaxshilash** — "Kodni yaxshila" deb yozing
+
+Nima yordam kerak? 😊`;
+  }
+
+  if (q.includes('python') || q.includes('piton')) {
+    return createFileResponse('main.py', 'python', `# 🐍 Python dastur
+
+def greet(name):
+    """Salomlashish funksiyasi"""
+    return f"Salom, {name}! 👋"
+
+def fibonacci(n):
+    """Fibonacci ketma-ketligi"""
+    if n <= 1:
+        return n
+    a, b = 0, 1
+    for _ in range(2, n + 1):
+        a, b = b, a + b
+    return b
+
+def is_palindrome(text):
+    """Palindrom tekshirish"""
+    cleaned = text.lower().replace(" ", "")
+    return cleaned == cleaned[::-1]
+
+# Asosiy dastur
+if __name__ == "__main__":
+    print(greet("Dunyo"))
+    
+    print("\\nFibonacci:")
+    for i in range(10):
+        print(f"  F({i}) = {fibonacci(i)}")
+    
+    print("\\nPalindrom test:")
+    words = ["madam", "hello", "racecar", "python"]
+    for word in words:
+        result = "✅" if is_palindrome(word) else "❌"
+        print(f"  {result} {word}")
+`);
+  }
+
+  // Default response
+  return `🤔 "${query}" haqida tushundim!
+
+Sizga quyidagilarda yordam bera olaman:
+
+📄 **HTML** — "HTML sahifa yarat"
+✅ **To-Do App** — "To-do list yarat"
+🔢 **Calculator** — "Calculator yoz"
+🐍 **Snake Game** — "Snake game yarat"
+🔐 **Login Form** — "Login form yarat"
+🌤️ **Weather App** — "Weather app yarat"
+🎨 **CSS Dizayn** — "CSS dizayn qil"
+⚡ **JavaScript** — "JavaScript funksiyasi yoz"
+🐍 **Python** — "Python kod yoz"
+🔍 **Bug topish** — "Bug topib ber"
+💡 **Kodni yaxshilash** — "Kodni yaxshila"
+📖 **Tushuntirish** — "Kodni tushuntir"
+
+Aniqroq so'rang, men sizga kod yozib beraman! 🚀`;
+}
+
+function createFileResponse(filename, language, content) {
+  // Create the file in the file system
+  fileSystem[filename] = { content, language };
+  renderFileTree();
+  saveAllFiles();
+
+  // Open the file
+  openFile(filename);
+
+  return `✅ **${filename}** faylini yaratdim va editorda ochdim!
+
+**Fayl tarkibi:**
+\`\`\`${language === 'htmlmixed' ? 'html' : language}
+${content.substring(0, 200)}...
+\`\`\`
+
+▶️ **Ishga tushirish** uchun: \`Ctrl+Enter\` bosing yoki yuqoridagi "Ishga tushirish" tugmasini bosing!
+
+Yana nima kerak? 😊`;
+}
+
+// ===== THEME =====
+function toggleTheme() {
+  currentThemeIdx = (currentThemeIdx + 1) % themes.length;
+  if (editor) editor.setOption('theme', themes[currentThemeIdx]);
+  notify(`🎨 Mavzu: ${themes[currentThemeIdx]}`, 'info');
+}
+
+// ===== SEARCH =====
+function searchInCode() {
+  const query = document.getElementById('searchInput').value;
+  if (!query || !editor) return;
+  editor.showSearch && editor.showSearch({ query });
+}
+
+// ===== FORMAT =====
+function formatCode() {
+  if (!editor || !activeFile) return;
+  let code = editor.getValue();
+
+  // Simple HTML formatting
+  if (activeFile.endsWith('.html') || activeFile.endsWith('.htm')) {
+    code = formatHTML(code);
+  }
+
+  editor.setValue(code);
+  notify('🎨 Kod formatlandi!', 'success');
+}
+
+function formatHTML(html) {
+  let formatted = '';
+  let indent = 0;
+  const lines = html.replace(/>\s*</g, '>\n<').split('\n');
+
+  lines.forEach(line => {
+    line = line.trim();
+    if (!line) return;
+
+    if (line.match(/^<\/(.*?)>/)) indent--;
+    formatted += '  '.repeat(Math.max(0, indent)) + line + '\n';
+    if (line.match(/^<[^/!].*[^/]>/) && !line.match(/^<(br|hr|img|input|meta|link)/i)) {
+      indent++;
+    }
+  });
+
+  return formatted.trim();
+}
+
+// ===== DOWNLOAD =====
+function downloadCode() {
+  if (!activeFile) return;
+  const content = editor ? editor.getValue() : '';
+  const blob = new Blob([content], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = activeFile;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  notify(`💾 ${activeFile} yuklab olindi!`, 'success');
+}
+
+// ===== CONTEXT MENU =====
+function showContextMenu(e, filename) {
+  e.preventDefault();
+  contextTarget = filename;
+  const menu = document.getElementById('contextMenu');
+  menu.style.left = e.clientX + 'px';
+  menu.style.top = e.clientY + 'px';
+  menu.classList.add('visible');
+}
+
+document.addEventListener('click', () => {
+  document.getElementById('contextMenu').classList.remove('visible');
+});
+
+// ===== NOTIFICATION =====
+function notify(message, type = 'info') {
+  const el = document.getElementById('notification');
+  el.textContent = message;
+  el.className = `notification ${type} show`;
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ===== SETTINGS =====
+function showSettings() {
+  notify('⚙️ Sozlamalar: Ctrl+S — saqlash, Ctrl+I — AI, Ctrl+Enter — ishga tushirish', 'info');
+}
+
+function collapseAll() {
+  renderFileTree();
+}
+
+// ===== KEYBOARD SHORTCUTS =====
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.key === 's') {
+    e.preventDefault();
+    saveCurrentFile();
+    notify('💾 Saqlandi!', 'success');
+  }
+  if (e.ctrlKey && e.key === 'n') {
+    e.preventDefault();
+    newFile();
+  }
+  if (e.ctrlKey && e.key === 'Enter') {
+    e.preventDefault();
+    runCode();
+  }
+  if (e.ctrlKey && e.key === '`') {
+    e.preventDefault();
+    toggleTerminal();
+  }
+  if (e.ctrlKey && e.key === 'i') {
+    e.preventDefault();
+    toggleAI();
+    document.getElementById('aiInput').focus();
+  }
+});
+
+// ===== AUTO-SAVE =====
+setInterval(() => {
+  if (currentUser && !isGuest) saveAllFiles();
+}, 30000); // Every 30 seconds
+
+// ===== INIT =====
+console.log('⚡ CodeVerse IDE loaded!');
+</script>
+</body>
+</html>
